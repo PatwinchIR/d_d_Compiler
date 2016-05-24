@@ -47,9 +47,9 @@ struct ST{
     Identifier * SymbolTableBody[BUCKETS];
 };
 
-Identifier *SymbolTableBody[BUCKETS];
+//Identifier *SymbolTableBody[BUCKETS];
 
-//struct ST SymbolTable;
+struct ST SymbolTable;
 
 //used in scan_token();
 FILE *pasfile;
@@ -155,7 +155,7 @@ int parse() {
     int *vs = vsa; /* Bottom of state stack */
     int *vsp; /* Top of state stack */
     
-    //struct ST *temp;
+    struct ST *temp;
     
     #define POPSTACK(N)   (vsp -= (N), ssp -= (N))
     
@@ -202,26 +202,26 @@ int parse() {
             
             printf("Reduce using %d: %s\n",-n-1, ProductionTable[-n-1]);
             
-//            switch (-n-1) {
-//                case 14: //m1 -> EPSILON
-//                    tblptrp ++;
-//                    *tblptrp = mktable(NULL);
-//                    offsetp ++;
-//                    *offsetp = 0;
-//                    break;
-//                case 48: //n1 -> EPSILON
-//                    temp = mktable(*tblptrp);
-//                    tblptrp ++;
-//                    *tblptrp = temp;
-//                    
-//                    offsetp ++;
-//                    *offsetp = 0;
-//                    break;
-//                case 115: //variable_declaration -> identifier_list COLON type_denoter
-//                    
-//                default:
-//                    break;
-//            }
+            switch (-n-1) {
+                case 14: //m1 -> EPSILON
+                    tblptrp ++;
+                    *tblptrp = mktable(NULL);
+                    offsetp ++;
+                    *offsetp = 0;
+                    break;
+                case 48: //n1 -> EPSILON
+                    temp = mktable(*tblptrp);
+                    tblptrp ++;
+                    *tblptrp = temp;
+                    
+                    offsetp ++;
+                    *offsetp = 0;
+                    break;
+                case 115: //variable_declaration -> identifier_list COLON type_denoter
+                    
+                default:
+                    break;
+            }
             
         }else if (n == 1353) {
             printf("\nCongrats! ACCEPT !\n\n");
@@ -506,28 +506,28 @@ int gettoken(char *str) {
 }
 
 int install_id(char *str) {
-    //struct ST * sttemp;
+    struct ST * sttemp;
     int pos = hashpjw(str);
-//    if (*tblptrp != NULL) {
-//        sttemp = *tblptrp;
-//        if (sttemp->SymbolTableBody[pos]->type != IDENTIFIER && sttemp->SymbolTableBody[pos]->type != -1) {
-//            return 0;
-//        }else{
-//            sttemp->SymbolTableBody[pos]->name = str;
-//            sttemp->SymbolTableBody[pos]->type = IDENTIFIER;
-//            sttemp->SymbolTableBody[pos]->next_hash = NULL;
-//        }
-//    }
-            if (SymbolTableBody[pos]->type != IDENTIFIER && SymbolTableBody[pos]->type != -1) {
-                return 0;
-            }else{
-                SymbolTableBody[pos]->name = str;
-                SymbolTableBody[pos]->type = IDENTIFIER;
-                SymbolTableBody[pos]->next_hash = NULL;
-            }
+    if (*tblptrp != NULL) {
+        sttemp = *tblptrp;
+        if (sttemp->SymbolTableBody[pos]->type != IDENTIFIER && sttemp->SymbolTableBody[pos]->type != -1) {
+            return 0;
+        }else{
+            sttemp->SymbolTableBody[pos]->name = str;
+            sttemp->SymbolTableBody[pos]->type = IDENTIFIER;
+            sttemp->SymbolTableBody[pos]->next_hash = NULL;
+        }
+    }
+//            if (SymbolTableBody[pos]->type != IDENTIFIER && SymbolTableBody[pos]->type != -1) {
+//                return 0;
+//            }else{
+//                SymbolTableBody[pos]->name = str;
+//                SymbolTableBody[pos]->type = IDENTIFIER;
+//                SymbolTableBody[pos]->next_hash = NULL;
+//            }
     //To store those identifiers with the same datatype temperarily.
-//    tobep ++;
-//    *tobep = pos;
+    tobep ++;
+    *tobep = pos;
     
     return pos;
 }
@@ -555,18 +555,18 @@ char* install_str(char *str) {
 void initialiseSymbolTable() {
     int i, pos;
     
-    for (i = 0; i < BUCKETS; i++) {
-        SymbolTableBody[i] = (Identifier *)malloc(sizeof(Identifier));
-        SymbolTableBody[i]->name = "";
-        SymbolTableBody[i]->type = -1;
-        SymbolTableBody[i]->next_hash = NULL;
-    }
-    for (i = 0; i < KEYWORDNUM; i++) {
-        pos = hashpjw(KeyWord[i]);
-        SymbolTableBody[pos]->name = KeyWord[i];
-        SymbolTableBody[pos]->type = KeyWordCode[i];
-        SymbolTableBody[pos]->next_hash = NULL;
-    }
+//    for (i = 0; i < BUCKETS; i++) {
+//        SymbolTableBody[i] = (Identifier *)malloc(sizeof(Identifier));
+//        SymbolTableBody[i]->name = "";
+//        SymbolTableBody[i]->type = -1;
+//        SymbolTableBody[i]->next_hash = NULL;
+//    }
+//    for (i = 0; i < KEYWORDNUM; i++) {
+//        pos = hashpjw(KeyWord[i]);
+//        SymbolTableBody[pos]->name = KeyWord[i];
+//        SymbolTableBody[pos]->type = KeyWordCode[i];
+//        SymbolTableBody[pos]->next_hash = NULL;
+//    }
 }
 
 void cleantoken() {
