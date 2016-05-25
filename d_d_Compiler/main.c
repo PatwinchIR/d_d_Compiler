@@ -271,17 +271,17 @@ int parse() {
             look_ahead = scan_token();
             
             //for dbg; declaration translation.
-//            temp = *tblptrp;
-//            if (temp) {
-//                for (k = 0; k < BUCKETS; k++) {
-//                    if (temp->SymbolTableBody[k]->datatype != -1) {
-//                        printf("name: %-5s ", temp->SymbolTableBody[k]->name);
-//                        printf("type: %d ", temp->SymbolTableBody[k]->type);
-//                        printf("datatype: %d ", temp->SymbolTableBody[k]->datatype);
-//                        printf("offset: %d\n", temp->SymbolTableBody[k]->offset);
-//                    }
-//                }
-//            }
+            temp = *tblptrp;
+            if (temp) {
+                for (k = 0; k < BUCKETS; k++) {
+                    if (temp->SymbolTableBody[k]->datatype != -1) {
+                        printf("name: %-5s ", temp->SymbolTableBody[k]->name);
+                        printf("type: %d ", temp->SymbolTableBody[k]->type);
+                        printf("datatype: %d ", temp->SymbolTableBody[k]->datatype);
+                        printf("offset: %d\n", temp->SymbolTableBody[k]->offset);
+                    }
+                }
+            }
             
             if (look_ahead == 0) {
                 currentArray = 1;
