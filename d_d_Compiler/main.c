@@ -44,6 +44,7 @@ typedef struct idnode {
 
 struct ST{
     struct ST * previous;
+    char *name;
     int depth;
     int space_taken;
     Identifier * SymbolTableBody[BUCKETS];
@@ -102,22 +103,22 @@ int TypeWidth[DATATYPENUM] = {
 };
 
 // identifiers who's datatype field has not been filled.
-int identifierList[TOBEDATATYPED];
-int *tobe = identifierList;
-int *tobep = identifierList;
+Token identifierList[TOBEDATATYPED];
+Token *idlst = identifierList;
+Token *idlstp = identifierList;
 
 //for string/int/real type variables;
 int typeDenoter = 0;
 
 //for subprocesses;
-int currentSubProc = -1;
+Token currentSubProc;
 
 //for array type variables;
 int currentArray = 0;
 int currentArraySize = 0;
 
 //for assignment expression;
-char *currentIdentifier;
+Token currentIdentifier;
 char *currentVariableAccess;
 
 int currentDIGSEQ;
@@ -151,9 +152,9 @@ Token *scan_token();
 int parse();
 
 struct ST* mktable(struct ST * previous);
-void enter(struct ST * table, int datatype);
+void enter(struct ST * table, Token vartoken, int vardatatype, int varoffset);
 void addwidth(struct ST * table, int width);
-void enterproc(struct ST * table, int subproc, struct ST * subtable);
+void enterproc(struct ST * table, Token subproc, struct ST * subtable);
 
 int main(int argc, const char * argv[]) {
     initialiseKeywordTable();
@@ -163,18 +164,11 @@ int main(int argc, const char * argv[]) {
 }
 
 struct ST* mktable(struct ST * previous){
-    int i, pos, *temp;
+    int i, pos;
     struct ST * newTable;
-    //To process newTable's name...
-    if (tobep != tobe) {
-        temp = tobe;
-        temp ++;
-        currentSubProc = *temp;
-        tobep = tobe;
-    }
-    
     newTable = (struct ST *)malloc(sizeof(struct ST));
     newTable->previous = previous;
+    newTable->name = currentSubProc.tokenname;
     if (previous) {
         newTable->depth = previous->depth + 1;
     }else{
@@ -198,28 +192,17 @@ struct ST* mktable(struct ST * previous){
     return newTable;
 }
 
-void enter(struct ST * table, int datatype){
+void enter(struct ST * table, Token vartoken, int vardatatype, int varoffset){
     int pos;
     Identifier * temp;
-    while (tobep != tobe) {
-        pos = *tobep;
-        temp = table->SymbolTableBody[pos];
-        while (temp) {
-            if (temp->datatype == -1) {
-                temp->datatype = datatype;
-                temp->offset = *offsetp;
-                if (currentArray) {
-                    printf("currentArray: %d\ncurrentArraySize: %d\n", currentArray, currentArraySize);
-                    *offsetp = *offsetp + datatype * currentArraySize;
-                    currentArray = 0;
-                    currentArraySize = 0;
-                }else{
-                    *offsetp += datatype;
-                }
-                tobep --;
-            }
-            temp = temp->next_hash;
+    pos = vartoken.pos;
+    temp = table->SymbolTableBody[pos];
+    while (temp) {
+        if (temp->datatype == -1) {
+            temp->datatype = vardatatype;
+            temp->offset = varoffset;
         }
+        temp = temp->next_hash;
     }
 }
 
@@ -227,12 +210,12 @@ void addwidth(struct ST * table, int width){
     table->space_taken = width;
 }
 
-void enterproc(struct ST * table, int subproc, struct ST * subtable){
+void enterproc(struct ST * table, Token subproc, struct ST * subtable){
     Identifier * temp;
-    temp = table->SymbolTableBody[subproc];
+    temp = table->SymbolTableBody[subproc.pos];
     while (temp) {
         if (temp->datatype == -1) {
-            table->SymbolTableBody[subproc]->next_ST = subtable;
+            table->SymbolTableBody[subproc.pos]->next_ST = subtable;
         }
         temp = temp->next_hash;
     }
@@ -288,7 +271,7 @@ int parse() {
             ssp ++;
             *ssp = n;
             
-            printf("\nEntering State %d\nNext Token: ", *ssp);
+            printf("\nEntering State %d\nToken: %s\nType: %d\nNext Token: ", *ssp, look_ahead->tokenname, look_ahead->type);
             
             look_ahead = scan_token();
             
@@ -298,9 +281,9 @@ int parse() {
                 for (k = 0; k < BUCKETS; k++) {
                     if (temp->SymbolTableBody[k]->datatype != -1) {
                         printf("name: %-5s ", temp->SymbolTableBody[k]->name);
-                        printf("type: %d ", temp->SymbolTableBody[k]->type);
-                        printf("datatype: %d ", temp->SymbolTableBody[k]->datatype);
-                        printf("offset: %d\n", temp->SymbolTableBody[k]->offset);
+                        printf("type: %-5d ", temp->SymbolTableBody[k]->type);
+                        printf("datatype: %-5d ", temp->SymbolTableBody[k]->datatype);
+                        printf("offset: %-5d\n", temp->SymbolTableBody[k]->offset);
                     }
                 }
             }
@@ -311,22 +294,29 @@ int parse() {
             
             
         }else if (n < 0) {
-            POPSTACK(ProductionRightLENGTH[-n-1]);
-            state = *ssp;
-            
-            vsp ++;
-            vsp->type = ProductionLeftPOS[-n-1];
-            
-            ssp ++;
-            *ssp = ParsingTable[state][ProductionLeftPOS[-n-1]];
-            
             printf("Reduce using %d: %s\n",-n-1, ProductionTable[-n-1]);
-            
             switch (-n-1) {
+                case 2:
+                    tblptrp ++;
+                    *tblptrp = mktable(NULL);
+                    offsetp ++;
+                    *offsetp = 0;
+                    idlstp = idlst;
+                    break;
+                    
+                case 3:
+                    currentIdentifier = *vsp;
+                    break;
+                    
                 case 5: //program -> program_heading semicolon block DOT
                     addwidth(*tblptrp, *offsetp);
                     tblptrp --;
                     offsetp --;
+                    break;
+                    
+                case 9:
+                    idlstp ++;
+                    *idlstp = currentIdentifier;
                     break;
                     
                 case 14: //m1 -> EPSILON
@@ -334,9 +324,16 @@ int parse() {
                     *tblptrp = mktable(NULL);
                     offsetp ++;
                     *offsetp = 0;
+                    idlstp = idlst;
+                    break;
+                    
+                case 20:
+                    idlstp ++;
+                    *idlstp = currentIdentifier;
                     break;
                     
                 case 48: //n1 -> EPSILON
+                    currentSubProc = currentIdentifier;
                     temp = mktable(*tblptrp);
                     tblptrp ++;
                     *tblptrp = temp;
@@ -345,12 +342,21 @@ int parse() {
                     *offsetp = 0;
                     break;
                     
-                case 83:
-                    currentVariableAccess = currentIdentifier;
+                case 61:
+                    temp = *tblptrp;
+                    typeDenoter = temp->SymbolTableBody[vsp->pos]->type;
                     break;
                     
+//                case 83:
+//                    currentVariableAccess = currentIdentifier;
+//                    break;
+                    
                 case 115: //variable_declaration -> identifier_list COLON type_denoter
-                    enter(*tblptrp, typeDenoter);
+                    while (idlstp != idlst) {
+                        enter(*tblptrp, *idlstp, typeDenoter, *offsetp);
+                        *offsetp += typeDenoter;
+                        idlstp --;
+                    }
                     break;
                     
                 case 138: //procedure_declaration -> procedure_heading semicolon n1 procedure_block
@@ -361,13 +367,29 @@ int parse() {
                     enterproc(*tblptrp, currentSubProc, temp);
                     break;
                     
-                case 149:
+                case 142: //subrange_type -> constant DOTDOT constant
+                    currentArraySize = vsp->intval;
+                    break;
                     
+                case 176: //array_type -> ARRAY LBRAC index_list RBRAC OF component_type
+                    typeDenoter = typeDenoter * currentArraySize;
                     break;
                     
                 default:
                     break;
             }
+            
+            
+            POPSTACK(ProductionRightLENGTH[-n-1]);
+            state = *ssp;
+            
+            vsp ++;
+            vsp->type = ProductionLeftPOS[-n-1];
+            
+            ssp ++;
+            *ssp = ParsingTable[state][ProductionLeftPOS[-n-1]];
+            
+            printf("Type: %d\n", vsp->type);
             
         }else if (n == 1353) {
             
@@ -840,7 +862,6 @@ int install_id(char *str) {
     if (gettoken(str) != IDENTIFIER) {
         return 0;
     }
-    currentIdentifier = strtemp;
     if (*tblptrp != NULL) {
         pos = hashpjw(str);
         sttemp = *tblptrp;
@@ -849,10 +870,6 @@ int install_id(char *str) {
             sttemp->SymbolTableBody[pos]->name = strtemp;
             sttemp->SymbolTableBody[pos]->type = IDENTIFIER;
             sttemp->SymbolTableBody[pos]->next_hash = NULL;
-            tobep ++;
-            *tobep = pos;
-        }else if(isDatatype(str)){
-            typeDenoter = typetemp;
         }else if(!isDatatype(str)){
             idnodetemp = sttemp->SymbolTableBody[pos];
             while (idnodetemp->next_hash) {
@@ -865,8 +882,6 @@ int install_id(char *str) {
             idnodetemp->next_hash->offset = -1;
             idnodetemp->next_hash->next_hash = NULL;
             idnodetemp->next_hash->next_ST = NULL;
-            tobep ++;
-            *tobep = pos;
         }
     }
     //To store those identifiers with the same datatype temperarily.
@@ -874,9 +889,6 @@ int install_id(char *str) {
 }
 
 int install_int(char *str) {
-    if (currentArray) {
-        currentArraySize = atoi(str);
-    }
     return atoi(str);
 }
 
