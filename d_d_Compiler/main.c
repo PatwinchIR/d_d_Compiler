@@ -63,12 +63,23 @@ struct ST SymbolTable;
 //used in scan_token();
 FILE *pasfile;
 char ch;
+typedef struct tokennode{
+    char *tokenname;
+    int pos;
+    int type;
+    int intval;
+    float floatval;
+    char *strval;
+}Token;
+
+Token *tokenScanned;
 char *token;
+
 
 char *errtoken;
 
 // used in parse();
-int look_ahead;
+Token *look_ahead;
 
 char *KeyWord[KEYWORDNUM] = {
     "program", "begin", "end", "if", "then", "else",
@@ -91,12 +102,12 @@ int TypeWidth[DATATYPENUM] = {
 };
 
 // identifiers who's datatype field has not been filled.
-int tobeDatatyped[TOBEDATATYPED];
-int *tobe = tobeDatatyped;
-int *tobep = tobeDatatyped;
+int identifierList[TOBEDATATYPED];
+int *tobe = identifierList;
+int *tobep = identifierList;
 
 //for string/int/real type variables;
-int currentDatatype = 0;
+int typeDenoter = 0;
 
 //for subprocesses;
 int currentSubProc = -1;
@@ -104,6 +115,18 @@ int currentSubProc = -1;
 //for array type variables;
 int currentArray = 0;
 int currentArraySize = 0;
+
+//for assignment expression;
+char *currentIdentifier;
+char *currentVariableAccess;
+
+int currentDIGSEQ;
+float currentREALNUMBER;
+int currentNumber;
+int currentConstant;
+int currentPrimary;
+int currentFactor;
+
 
 //table pointer stack.
 struct ST *tblptrstk[TABLES];
@@ -124,8 +147,7 @@ int install_oct(char *str);
 int install_hex(char *str);
 char* install_str(char *str);
 void initialiseKeywordTable();
-void cleantoken();
-int scan_token();
+Token *scan_token();
 int parse();
 
 struct ST* mktable(struct ST * previous);
@@ -230,9 +252,9 @@ int parse() {
     int *ssp; /* Top of state stack */
     
     /* Semantic Value Stack */
-    int vsa[INITDEPTH];
-    int *vs = vsa; /* Bottom of state stack */
-    int *vsp; /* Top of state stack */
+    Token vsa[INITDEPTH];
+    Token *vs = vsa; /* Bottom of semantic value stack */
+    Token *vsp; /* Top of semantic value stack */
     
     struct ST *temp;
     
@@ -258,10 +280,10 @@ int parse() {
     look_ahead = scan_token();
     
     while (1) {
-        n = ParsingTable[*ssp][look_ahead];
+        n = ParsingTable[*ssp][look_ahead->type];
         if (n > 0 && n != 1353) {
             vsp ++;
-            *vsp = look_ahead;
+            *vsp = *look_ahead;
             
             ssp ++;
             *ssp = n;
@@ -283,7 +305,7 @@ int parse() {
                 }
             }
             
-            if (look_ahead == 0) {
+            if (look_ahead->type == 0) {
                 currentArray = 1;
             }
             
@@ -293,7 +315,7 @@ int parse() {
             state = *ssp;
             
             vsp ++;
-            *vsp = ProductionLeftPOS[-n-1];
+            vsp->type = ProductionLeftPOS[-n-1];
             
             ssp ++;
             *ssp = ParsingTable[state][ProductionLeftPOS[-n-1]];
@@ -323,8 +345,12 @@ int parse() {
                     *offsetp = 0;
                     break;
                     
+                case 83:
+                    currentVariableAccess = currentIdentifier;
+                    break;
+                    
                 case 115: //variable_declaration -> identifier_list COLON type_denoter
-                    enter(*tblptrp, currentDatatype);
+                    enter(*tblptrp, typeDenoter);
                     break;
                     
                 case 138: //procedure_declaration -> procedure_heading semicolon n1 procedure_block
@@ -348,19 +374,20 @@ int parse() {
             printf("\nCongrats! ACCEPT !\n\n");
             return 1;
         }else {
-            printf("\nError before %s where shouldn't exist a(an) %s!\n\n",errtoken, Terminos[look_ahead]);
+            printf("\nError before %s where shouldn't exist a(an) %s!\n\n",errtoken, Terminos[look_ahead->type]);
             return 0;
         }
     }
     return 0;
 }
 
-int scan_token() {
+Token *scan_token() {
     char *temp = NULL;
-    int spenum;
+    int spenum, pos;
     char check;
     errtoken = (char *)malloc(TOKENLENGTH * sizeof(char));
     token = (char *)malloc(TOKENLENGTH * sizeof(char));
+    tokenScanned = (Token *)malloc(sizeof(Token));
     while((ch = fgetc(pasfile)) != '\xff') {
         while (ch == ' ' || ch == '\t' || ch == '\n') {
             ch = fgetc(pasfile);
@@ -374,10 +401,19 @@ int scan_token() {
             fseek(pasfile, -1, SEEK_CUR);
             strcpy(errtoken, token);
             printf("%s ",token);
+            
             spenum = gettoken(token);
-            printf("(%d, %d)\n", spenum, install_id(token));
-            cleantoken();
-            return spenum;
+            pos = install_id(token);
+            
+            tokenScanned->tokenname = token;
+            tokenScanned->type = spenum;
+            tokenScanned->pos = pos;
+            tokenScanned->floatval = 0;
+            tokenScanned->intval = 0;
+            tokenScanned->strval = "";
+            
+            printf("(%d, %d)\n", spenum, pos);
+            return tokenScanned;
         }else if (isdigit(ch)) {
             temp = token;
             if (ch == '0') {
@@ -392,8 +428,16 @@ int scan_token() {
                     fseek(pasfile, -1, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %d)\n", HEX, install_hex(token));
-                    return HEX;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = HEX;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = 0;
+                    tokenScanned->intval = install_hex(token);
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %d)\n", HEX, tokenScanned->intval);
+                    return tokenScanned;
                 }else if (isdigit(ch)){
                     if (ch >= 48 && ch <= 55) {
                         ch = fgetc(pasfile);
@@ -406,8 +450,16 @@ int scan_token() {
                     fseek(pasfile, -1, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %d)\n", OCT, install_oct(token));
-                    return OCT;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = OCT;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = 0;
+                    tokenScanned->intval = install_oct(token);
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %d)\n", OCT, tokenScanned->intval);
+                    return tokenScanned;
                 }else if (ch == '.') {
                     *temp++ = ch;
                     ch = fgetc(pasfile);
@@ -418,8 +470,16 @@ int scan_token() {
                     fseek(pasfile, -1, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %f)\n", REALNUMBER, install_real(token));
-                    return REALNUMBER;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = REALNUMBER;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = install_real(token);
+                    tokenScanned->intval = 0;
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %f)\n", REALNUMBER, tokenScanned->floatval);
+                    return tokenScanned;
                 }
             }else if (ch >= 49 && ch <= 57) {
                 while (isdigit(ch)) {
@@ -437,23 +497,47 @@ int scan_token() {
                     fseek(pasfile, -1, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %f)\n", REALNUMBER, install_real(token));
-                    return REALNUMBER;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = REALNUMBER;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = install_real(token);
+                    tokenScanned->intval = 0;
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %f)\n", REALNUMBER, tokenScanned->floatval);
+                    return tokenScanned;
                 }else if (ch == '.' &&  check == '.'){
                     fseek(pasfile, -2, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %d)\n", DIGSEQ, install_int(token));
-                    return DIGSEQ;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = DIGSEQ;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = 0;
+                    tokenScanned->intval = install_int(token);
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %d)\n", DIGSEQ, tokenScanned->intval);
+                    return tokenScanned;
                 }else {
                     fseek(pasfile, -2, SEEK_CUR);
                     strcpy(errtoken, token);
                     printf("%s ",token);
-                    printf("(%d, %d)\n", DIGSEQ, install_int(token));
-                    return DIGSEQ;
+                    
+                    tokenScanned->tokenname = token;
+                    tokenScanned->type = DIGSEQ;
+                    tokenScanned->pos = 0;
+                    tokenScanned->floatval = 0;
+                    tokenScanned->intval = install_int(token);
+                    tokenScanned->strval = "";
+                    
+                    printf("(%d, %d)\n", DIGSEQ, tokenScanned->intval);
+                    return tokenScanned;
                 }
             }
-            cleantoken();
+
         }else if (ch == '\'') {
             temp = token;
             ch = fgetc(pasfile);
@@ -464,134 +548,236 @@ int scan_token() {
             fseek(pasfile, -1, SEEK_CUR);
             strcpy(errtoken, token);
             printf("%s ",token);
-            printf("(%d, %s)\n", CHARACTER_STRING, install_str(token));
-            cleantoken();
+            
+            tokenScanned->tokenname = token;
+            tokenScanned->type = CHARACTER_STRING;
+            tokenScanned->pos = 0;
+            tokenScanned->floatval = 0;
+            tokenScanned->intval = 0;
+            tokenScanned->strval = install_str(token);
+            
+            printf("(%d, %s)\n", CHARACTER_STRING, tokenScanned->strval);
+            
             ch = fgetc(pasfile);
-            return CHARACTER_STRING;
+            
+            return tokenScanned;
         }else{
+            tokenScanned->pos = 0;
+            tokenScanned->floatval = 0;
+            tokenScanned->intval = 0;
+            tokenScanned->strval = "";
             switch (ch) {
                 case '*':
                     ch = fgetc(pasfile);
                     if (ch == '*') {
                         errtoken = "**";
+                        
+                        tokenScanned->tokenname = "**";
+                        tokenScanned->type = STARSTAR;
+                        
                         printf("** (%d, %d)\n", STARSTAR, 0);
-                        return STARSTAR;
+                        return tokenScanned;
                     }else{
                         fseek(pasfile, -1, SEEK_CUR);
+                        
                         errtoken = "*";
+                        
+                        tokenScanned->tokenname = "*";
+                        tokenScanned->type = STAR;
+                        
                         printf("*  (%d, %d)\n", STAR, 0);
-                        return STAR;
+                        return tokenScanned;
                     }
                     break;
                 case '.':
                     ch = fgetc(pasfile);
                     if (ch == '.') {
                         errtoken = "..";
+                        
+                        tokenScanned->tokenname = "..";
+                        tokenScanned->type = DOTDOT;
+                        
                         printf(".. (%d, %d)\n", DOTDOT, 0);
-                        return DOTDOT;
+                        return tokenScanned;
                     }else if (ch != EOF) {
                         fseek(pasfile, -1, SEEK_CUR);
                         errtoken = ".";
+                        
+                        tokenScanned->tokenname = ".";
+                        tokenScanned->type = DOT;
+                        
                         printf(".  (%d, %d)\n", DOT, 0);
-                        return DOT;
+                        return tokenScanned;
                     }else {
                         errtoken = ".";
+                        
+                        tokenScanned->tokenname = ".";
+                        tokenScanned->type = DOT;
+                        
                         printf(".  (%d, %d)\n", DOT, 0);
-                        return DOT;
+                        return tokenScanned;
                     }
                     break;
                 case ':':
                     ch = fgetc(pasfile);
                     if (ch == '=') {
                         errtoken = ":=";
+                        
+                        tokenScanned->tokenname = ":=";
+                        tokenScanned->type = ASSIGNMENT;
+                        
                         printf(":= (%d, %d)\n", ASSIGNMENT, 0);
-                        return ASSIGNMENT;
+                        return tokenScanned;
                     }else{
                         fseek(pasfile, -1, SEEK_CUR);
                         errtoken = ":";
+                        
+                        tokenScanned->tokenname = ":";
+                        tokenScanned->type = COLON;
+                        
                         printf(":  (%d, %d)\n", COLON, 0);
-                        return COLON;
+                        return tokenScanned;
                     }
                     break;
                 case '<':
                     ch = fgetc(pasfile);
                     if (ch == '=') {
                         errtoken = "<=";
+                        
+                        tokenScanned->tokenname = "<=";
+                        tokenScanned->type = LE;
+                        
                         printf("<= (%d, %d)\n", LE, 0);
-                        return LE;
+                        return tokenScanned;
                     }else if (ch == '>'){
                         errtoken = "<>";
+                        
+                        tokenScanned->tokenname = "<>";
+                        tokenScanned->type = NOTEQUAL;
+                        
                         printf("<> (%d, %d)\n", NOTEQUAL, 0);
-                        return NOTEQUAL;
+                        return tokenScanned;
                     }else{
                         fseek(pasfile, -1, SEEK_CUR);
                         errtoken = "<";
+                        
+                        tokenScanned->tokenname = "<";
+                        tokenScanned->type = LT;
+                        
                         printf("<  (%d, %d)\n", LT, 0);
-                        return LT;
+                        return tokenScanned;
                     }
                     break;
                 case '=':
                     errtoken = "=";
+                    
+                    tokenScanned->tokenname = "=";
+                    tokenScanned->type = EQUAL;
+                    
                     printf("=  (%d, %d)\n", EQUAL, 0);
-                    return EQUAL;
+                    return tokenScanned;
                     break;
                 case '>':
                     ch = fgetc(pasfile);
                     if (ch == '=') {
                         errtoken = ">=";
+                        
+                        tokenScanned->tokenname = ">=";
+                        tokenScanned->type = GE;
+                        
                         printf(">= (%d, %d)\n", GE, 0);
-                        return GE;
+                        return tokenScanned;
                     }else{
                         fseek(pasfile, -1, SEEK_CUR);
                         errtoken = ">";
+                        
+                        tokenScanned->tokenname = ">";
+                        tokenScanned->type = GT;
+                        
                         printf(">  (%d, %d)\n", GT, 0);
-                        return GT;
+                        return tokenScanned;
                     }
                     break;
                 case '+':
                     errtoken = "+";
+                    
+                    tokenScanned->tokenname = "+";
+                    tokenScanned->type = PLUS;
+                    
                     printf("+  (%d, %d)\n", PLUS, 0);
-                    return PLUS;
+                    return tokenScanned;
                     break;
                 case '-':
                     errtoken = "-";
+                    
+                    tokenScanned->tokenname = "-";
+                    tokenScanned->type = MINUS;
+                    
                     printf("-  (%d, %d)\n", MINUS, 0);
-                    return MINUS;
+                    return tokenScanned;
                     break;
                 case '/':
                     errtoken = "/";
+                    
+                    tokenScanned->tokenname = "/";
+                    tokenScanned->type = SLASH;
+                    
                     printf("/  (%d, %d)\n", SLASH, 0);
-                    return SLASH;
+                    return tokenScanned;
                     break;
                 case ',':
                     errtoken = ",";
+                    
+                    tokenScanned->tokenname = ",";
+                    tokenScanned->type = COMMA;
+                    
                     printf(",  (%d, %d)\n", COMMA, 0);
-                    return COMMA;
+                    return tokenScanned;
                     break;
                 case ';':
                     errtoken = ";";
+                    
+                    tokenScanned->tokenname = ";";
+                    tokenScanned->type = SEMICOLON;
+                    
                     printf(";  (%d, %d)\n", SEMICOLON, 0);
-                    return SEMICOLON;
+                    return tokenScanned;
                     break;
                 case '(':
                     errtoken = "(";
+                    
+                    tokenScanned->tokenname = "(";
+                    tokenScanned->type = LPAREN;
+                    
                     printf("(  (%d, %d)\n", LPAREN, 0);
-                    return LPAREN;
+                    return tokenScanned;
                     break;
                 case ')':
                     errtoken = ")";
+                    
+                    tokenScanned->tokenname = ")";
+                    tokenScanned->type = RPAREN;
+                    
                     printf(")  (%d, %d)\n", RPAREN, 0);
-                    return RPAREN;
+                    return tokenScanned;
                     break;
                 case '[':
                     errtoken = "[";
+                    
+                    tokenScanned->tokenname = "[";
+                    tokenScanned->type = LBRAC;
+                    
                     printf("[  (%d, %d)\n", LBRAC, 0);
-                    return LBRAC;
+                    return tokenScanned;
                     break;
                 case ']':
                     errtoken = "]";
+                    
+                    tokenScanned->tokenname = "]";
+                    tokenScanned->type = RBRAC;
+                    
                     printf("]  (%d, %d)\n", RBRAC, 0);
-                    return RBRAC;
+                    return tokenScanned;
                     break;
                     
                 default:
@@ -601,8 +787,16 @@ int scan_token() {
         }
     }
     fclose(pasfile);
+    
+    tokenScanned->tokenname = "ACCEPT";
+    tokenScanned->type = ACCEPT;
+    tokenScanned->pos = 0;
+    tokenScanned->floatval = 0;
+    tokenScanned->intval = 0;
+    tokenScanned->strval = "";
+    
     printf("(End of file...)\n");
-    return ACCEPT;
+    return tokenScanned;
 }
 
 int hashpjw(char *str) {
@@ -646,6 +840,7 @@ int install_id(char *str) {
     if (gettoken(str) != IDENTIFIER) {
         return 0;
     }
+    currentIdentifier = strtemp;
     if (*tblptrp != NULL) {
         pos = hashpjw(str);
         sttemp = *tblptrp;
@@ -657,7 +852,7 @@ int install_id(char *str) {
             tobep ++;
             *tobep = pos;
         }else if(isDatatype(str)){
-            currentDatatype = typetemp;
+            typeDenoter = typetemp;
         }else if(!isDatatype(str)){
             idnodetemp = sttemp->SymbolTableBody[pos];
             while (idnodetemp->next_hash) {
@@ -674,13 +869,6 @@ int install_id(char *str) {
             *tobep = pos;
         }
     }
-//            if (SymbolTableBody[pos]->type != IDENTIFIER && SymbolTableBody[pos]->type != -1) {
-//                return 0;
-//            }else{
-//                SymbolTableBody[pos]->name = str;
-//                SymbolTableBody[pos]->type = IDENTIFIER;
-//                SymbolTableBody[pos]->next_hash = NULL;
-//            }
     //To store those identifiers with the same datatype temperarily.
     return pos;
 }
@@ -720,25 +908,4 @@ void initialiseKeywordTable() {
         KeywordTable[pos]->name = KeyWord[i];
         KeywordTable[pos]->type = KeyWordCode[i];
     }
-//    for (i = 0; i < BUCKETS; i++) {
-//        SymbolTableBody[i] = (Identifier *)malloc(sizeof(Identifier));
-//        SymbolTableBody[i]->name = "";
-//        SymbolTableBody[i]->type = -1;
-//        SymbolTableBody[i]->next_hash = NULL;
-//    }
-//    for (i = 0; i < KEYWORDNUM; i++) {
-//        pos = hashpjw(KeyWord[i]);
-//        SymbolTableBody[pos]->name = KeyWord[i];
-//        SymbolTableBody[pos]->type = KeyWordCode[i];
-//        SymbolTableBody[pos]->next_hash = NULL;
-//    }
-}
-
-void cleantoken() {
-    char *temp;
-    int i;
-    temp = token;
-    for (i = 0; i < TOKENLENGTH; i++) {
-        *temp++ = '\0';
-    };
 }
