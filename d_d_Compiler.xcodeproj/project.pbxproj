@@ -23,7 +23,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EC209A961CBEA6F000445019 /* done.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = done.h; sourceTree = "<group>"; };
 		EC73ECCB1CF1F1E800E768FA /* notagain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = notagain.h; sourceTree = "<group>"; };
 		ECDC076B1C99513000DBD883 /* d_d_Compiler */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = d_d_Compiler; sourceTree = BUILT_PRODUCTS_DIR; };
 		ECDC076E1C99513000DBD883 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -60,7 +59,6 @@
 			isa = PBXGroup;
 			children = (
 				EC73ECCB1CF1F1E800E768FA /* notagain.h */,
-				EC209A961CBEA6F000445019 /* done.h */,
 				ECDC076E1C99513000DBD883 /* main.c */,
 			);
 			path = d_d_Compiler;

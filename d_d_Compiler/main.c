@@ -41,6 +41,7 @@ typedef struct idnode {
     char *name;
     int type;
     int offset;
+    int isarray;
     int datatype;
     int datatypesize;
     int intval;
@@ -76,6 +77,7 @@ typedef struct tokennode{
     char *tokenname;
     int pos;
     int type;
+    int offset;
     int varname;
     int val;
     int intval;
@@ -142,9 +144,14 @@ Token mulOperatorList[OPER];
 Token *muloper = mulOperatorList;
 Token *muloperp = mulOperatorList;
 
+Token arrayList[OPER];
+Token *arrlst = arrayList;
+Token *arrlstp = arrayList;
+
 //for string/int/real/array type variables;
 int typeDenoter = 0;
 int datatypeSize = 0;
+int isArray = 0;
 
 //for subprocesses;
 Token currentSubProc;
@@ -208,6 +215,7 @@ struct ST* mktable(struct ST * previous){
         newTable->SymbolTableBody[i] = (Identifier *)malloc(sizeof(Identifier));
         newTable->SymbolTableBody[i]->name = "";
         newTable->SymbolTableBody[i]->type = -1;
+        newTable->SymbolTableBody[i]->isarray = 0;
         newTable->SymbolTableBody[i]->datatype = -1;
         newTable->SymbolTableBody[i]->datatypesize = -1;
         newTable->SymbolTableBody[i]->intval = 0;
@@ -236,6 +244,9 @@ void enter(struct ST * table, Token vartoken, int vardatatype, int vardatatypesi
             temp->datatype = vardatatype;
             temp->datatypesize = vardatatypesize;
             temp->offset = varoffset;
+            if (isArray) {
+                temp->isarray = 1;
+            }
         }
         temp = temp->next_hash;
     }
@@ -267,7 +278,8 @@ int parse() {
     int state; /* current state */
     int n;
     int i;
-    int varname;
+    int varname, varpos, varoffset;
+    int notfound = 0;
     
     //for print debug;
     int k;
@@ -318,38 +330,38 @@ int parse() {
             
             look_ahead = scan_token();
             
-//            //for dbg; declaration translation.
-//            temp = *tblptrp;
-//            if (temp) {
-//                for (k = 0; k < BUCKETS; k++) {
-//                    if (temp->SymbolTableBody[k]->offset != -1) {
-//                        printf("pos: %-3d ", k);
-//                        printf("name: %-10s ", temp->SymbolTableBody[k]->name);
-//                        printf("type: %-5d ", temp->SymbolTableBody[k]->type);
-//                        printf("datatypesize: %-5d ", temp->SymbolTableBody[k]->datatypesize);
-//                        printf("value: ");
-//                        switch (temp->SymbolTableBody[k]->datatype) {
-//                            case INTTYPE:
-//                                printf("%-10d ", temp->SymbolTableBody[k]->intval);
-//                                break;
-//                                
-//                            case REALTYPE:
-//                                printf("%-10f ", temp->SymbolTableBody[k]->floatval);
-//                                break;
-//                                
-//                            case STRTYPE:
-//                                printf("%-10s ", temp->SymbolTableBody[k]->strval);
-//                                break;
-//                                
-//                            default:
-//                                break;
-//                        }
-//                        printf("offset: %-5d\n", temp->SymbolTableBody[k]->offset);
-//                    }
-//                }
-//            }
+            //for dbg; declaration translation.
+            temp = *tblptrp;
+            if (temp) {
+                for (k = 0; k < BUCKETS; k++) {
+                    if (temp->SymbolTableBody[k]->offset != -1) {
+                        printf("pos: %-3d ", k);
+                        printf("name: %-10s ", temp->SymbolTableBody[k]->name);
+                        printf("type: %-5d ", temp->SymbolTableBody[k]->type);
+                        printf("datatypesize: %-5d ", temp->SymbolTableBody[k]->datatypesize);
+                        printf("value: ");
+                        switch (temp->SymbolTableBody[k]->datatype) {
+                            case INTTYPE:
+                                printf("%-10d ", temp->SymbolTableBody[k]->intval);
+                                break;
+                                
+                            case REALTYPE:
+                                printf("%-10f ", temp->SymbolTableBody[k]->floatval);
+                                break;
+                                
+                            case STRTYPE:
+                                printf("%-10s ", temp->SymbolTableBody[k]->strval);
+                                break;
+                                
+                            default:
+                                break;
+                        }
+                        printf("offset: %-5d\n", temp->SymbolTableBody[k]->offset);
+                    }
+                }
+            }
         }else if (n < 0) {
-            //printf("Reduce using %d: %s\n",-n-1, ProductionTable[-n-1]);
+            printf("Reduce using %d: %s\n",-n-1, ProductionTable[-n-1]);
             switch (-n-1) {
                 case 2:
                     tblptrp ++;
@@ -457,14 +469,33 @@ int parse() {
                 case 83:
                     nonTerminos[variable_access] = nonTerminos[identifier];
                     temp = *tblptrp;
-                    if (temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatypesize == -1) {
+                    do {
+                        if (temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatypesize == -1) {
+                            notfound = 1;
+                            temp = temp->previous;
+                        }else{
+                            notfound = 0;
+                            break;
+                        }
+                    } while (temp);
+                    if (notfound) {
                         printf("\nERROR[UNDEFINED], variable %s not defined.\n", nonTerminos[variable_access].tokenname);
                         return 0;
                     }else{
                         nonTerminos[variable_access].val = temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatype;
                         nonTerminos[variable_access].intval = temp->SymbolTableBody[nonTerminos[variable_access].pos]->intval;
                         nonTerminos[variable_access].floatval = temp->SymbolTableBody[nonTerminos[variable_access].pos]->floatval;
+                        if (temp->SymbolTableBody[nonTerminos[variable_access].pos]->isarray) {
+                            arrlstp ++;
+                            *arrlstp = nonTerminos[variable_access];
+                        }
                     }
+                    varaccp ++;
+                    *varaccp = nonTerminos[variable_access];
+                    break;
+                    
+                case 95:
+                    nonTerminos[variable_access] = nonTerminos[indexed_variable];
                     varaccp ++;
                     *varaccp = nonTerminos[variable_access];
                     break;
@@ -473,13 +504,41 @@ int parse() {
                     while (idlstp != idlst) {
                         enter(*tblptrp, *idlstp, typeDenoter, datatypeSize, *offsetp);
                         *offsetp += datatypeSize;
+                        isArray = 0;
                         idlstp --;
                     }
                     break;
                     
+                case 126:
+                    nonTerminos[indexed_variable] = nonTerminos[index_expression_list];
+                    varpos = newtemp();
+                    nonTerminos[indexed_variable].varname = varpos;
+                    temp = *tblptrp;
+                    do {
+                        if (temp->SymbolTableBody[nonTerminos[indexed_variable].pos]->datatypesize == -1) {
+                            notfound = 1;
+                            temp = temp->previous;
+                        }else{
+                            notfound = 0;
+                            break;
+                        }
+                    } while (temp);
+                    printf("t%d := %d\n", varpos, temp->SymbolTableBody[nonTerminos[indexed_variable].pos]->offset);
+                    varoffset = newtemp();
+                    if (nonTerminos[expression].varname == 0) {
+                        printf("t%d := %s * %d\n", varoffset, nonTerminos[expression].tokenname, TypeWidth[temp->SymbolTableBody[nonTerminos[indexed_variable].pos]->datatype]);
+                    }else{
+                        printf("t%d := t%d * %d\n", varoffset, nonTerminos[expression].varname, TypeWidth[temp->SymbolTableBody[nonTerminos[indexed_variable].pos]->datatype]);
+                    }
+                    nonTerminos[indexed_variable].offset = varoffset;
+                    break;
+                    
+                case 127:
+                    nonTerminos[control_variable] = nonTerminos[identifier];
+                    break;
+                    
                 case 128:
                     nonTerminos[primary] = nonTerminos[unsigned_constant];
-                    
                     break;
                     
                 case 129:
@@ -526,15 +585,33 @@ int parse() {
                     
                 case 149:
                     temp = *tblptrp;
-                    if(temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatype == nonTerminos[expression].val){
-                        
-                        // gencode;
-                        varname = nonTerminos[expression].varname;
-                        printf("%s := ", temp->SymbolTableBody[nonTerminos[variable_access].pos]->name);
-                        if (varname == 0) {
-                            printf("%s\n", nonTerminos[expression].tokenname);
+                    do {
+                        if (temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatypesize == -1) {
+                            notfound = 1;
+                            temp = temp->previous;
                         }else{
-                            printf("t%d\n", nonTerminos[expression].varname);
+                            notfound = 0;
+                            break;
+                        }
+                    } while (temp);
+                    if(temp->SymbolTableBody[nonTerminos[variable_access].pos]->datatype == nonTerminos[expression].val){
+                        // gencode;
+                        if (nonTerminos[variable_access].offset == -1) {
+                            varname = nonTerminos[expression].varname;
+                            printf("%s := ", temp->SymbolTableBody[nonTerminos[variable_access].pos]->name);
+                            if (varname == 0) {
+                                printf("%s\n", nonTerminos[expression].tokenname);
+                            }else{
+                                printf("t%d\n", nonTerminos[expression].varname);
+                            }
+                        }else{
+                            varname = nonTerminos[expression].varname;
+                            printf("t%d[t%d] := ", nonTerminos[variable_access].varname, nonTerminos[variable_access].offset);
+                            if (varname == 0) {
+                                printf("%s\n", nonTerminos[expression].tokenname);
+                            }else{
+                                printf("t%d\n", nonTerminos[expression].varname);
+                            }
                         }
                         currentTemp = 0;
                         
@@ -561,6 +638,16 @@ int parse() {
                     }
                     break;
                     
+                case 150:
+                    nonTerminos[index_expression] = nonTerminos[expression];
+                    break;
+                    
+                case 151:
+                    nonTerminos[index_expression_list] = *arrlstp;
+                    nonTerminos[index_expression_list].offset = nonTerminos[index_expression].intval;
+                    nonTerminos[index_expression_list].varname = nonTerminos[index_expression].varname;
+                    break;
+                    
                 case 153:
                     if (nonTerminos[sign].type == MINUS) {
                         // gencode;
@@ -572,6 +659,10 @@ int parse() {
                         nonTerminos[factor].floatval = -nonTerminos[factor].floatval;
                     }
                     
+                    break;
+                    
+                case 161:
+                    nonTerminos[initial_value] = nonTerminos[expression];
                     break;
                     
                 case 162:
@@ -695,7 +786,12 @@ int parse() {
                     break;
                     
                 case 176: //array_type -> ARRAY LBRAC index_list RBRAC OF component_type
+                    isArray = 1;
                     datatypeSize = TypeWidth[typeDenoter] * currentArraySize;
+                    break;
+                    
+                case 177:
+                    nonTerminos[final_value] = nonTerminos[expression];
                     break;
                     
                 default:
@@ -753,6 +849,7 @@ Token *scan_token() {
             tokenScanned->tokenname = token;
             tokenScanned->type = spenum;
             tokenScanned->pos = pos;
+            tokenScanned->offset = -1;
             tokenScanned->varname = 0;
             tokenScanned->val = -1;
             tokenScanned->floatval = 0;
@@ -779,6 +876,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = HEX;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = HEX;
                     tokenScanned->floatval = 0;
@@ -803,6 +901,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = OCT;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = OCT;
                     tokenScanned->floatval = 0;
@@ -825,6 +924,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = REALNUMBER;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = REALTYPE;
                     tokenScanned->floatval = install_real(token);
@@ -842,6 +942,7 @@ Token *scan_token() {
                 check = fgetc(pasfile);
                 if (ch == '.' &&  check != '.') {
                     *temp++ = ch;
+                    *temp++ = check;
                     ch = fgetc(pasfile);
                     while (isdigit(ch)) {
                         *temp++ = ch;
@@ -854,6 +955,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = REALNUMBER;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = REALTYPE;
                     tokenScanned->floatval = install_real(token);
@@ -870,6 +972,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = DIGSEQ;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = INTTYPE;
                     tokenScanned->floatval = 0;
@@ -886,6 +989,7 @@ Token *scan_token() {
                     tokenScanned->tokenname = token;
                     tokenScanned->type = DIGSEQ;
                     tokenScanned->pos = 0;
+                    tokenScanned->offset = -1;
                     tokenScanned->varname = 0;
                     tokenScanned->val = INTTYPE;
                     tokenScanned->floatval = 0;
@@ -911,6 +1015,7 @@ Token *scan_token() {
             tokenScanned->tokenname = token;
             tokenScanned->type = CHARACTER_STRING;
             tokenScanned->pos = 0;
+            tokenScanned->offset = -1;
             tokenScanned->varname = 0;
             tokenScanned->val = STRTYPE;
             tokenScanned->floatval = 0;
@@ -924,6 +1029,7 @@ Token *scan_token() {
             return tokenScanned;
         }else{
             tokenScanned->pos = 0;
+            tokenScanned->offset = -1;
             tokenScanned->varname = 0;
             tokenScanned->val = -1;
             tokenScanned->floatval = 0;
@@ -1154,6 +1260,7 @@ Token *scan_token() {
     tokenScanned->tokenname = "ACCEPT";
     tokenScanned->type = ACCEPT;
     tokenScanned->pos = 0;
+    tokenScanned->offset = -1;
     tokenScanned->varname = 0;
     tokenScanned->val = -1;
     tokenScanned->floatval = 0;
@@ -1221,6 +1328,7 @@ int install_id(char *str) {
             idnodetemp->next_hash->name = str;
             idnodetemp->next_hash->type = IDENTIFIER;
             idnodetemp->next_hash->datatype = -1;
+            idnodetemp->next_hash->isarray = 0;
             idnodetemp->next_hash->intval = 0;
             idnodetemp->next_hash->floatval = 0;
             idnodetemp->next_hash->strval = "";
