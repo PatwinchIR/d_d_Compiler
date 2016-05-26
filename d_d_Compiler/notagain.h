@@ -63,6 +63,11 @@
 #define INPUT 63
 #define OUTPUT 64
 
+#define ARRAYOFFSET 65
+#define ARRAYADDR 66
+#define OFFSETASSIGN 67
+#define MINUSASSIGN 68
+
 #define program_heading 0
 #define identifier_list 1
 #define block 2
@@ -180,7 +185,7 @@
 #define REALTYPE 1
 #define STRTYPE 2
 
-char *Terminos[51] = {
+char *Terminals[51] = {
     "ARRAY", "ASSIGNMENT", "CHARACTER_STRING", "COLON", "COMMA", "CONST", "DIGSEQ", "SLASH", "DO", "DOT", "DOTDOT", "DOWNTO", "ELSE", "END", "EQUAL", "FOR", "GE", "GT", "IDENTIFIER", "IF", "LABEL", "LBRAC", "LE", "LPAREN", "LT", "MINUS", "NIL", "NOT", "NOTEQUAL", "OR", "BEGIN", "PLUS", "PROGRAM", "RBRAC", "REALNUMBER", "REPEAT", "RPAREN", "SEMICOLON", "STAR", "THEN", "TO", "TYPE", "UNTIL", "VAR", "WHILE", "OF", "FORWARD", "EXTERNAL", "PROCEDURE", "FUNCTION", "GOTO"
 };
 
