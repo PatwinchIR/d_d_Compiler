@@ -1,0 +1,42 @@
+program sa1ple(output);
+var num, a, b, c, d, e: Integer;
+    pi: Real;
+    x : String;
+    y : array[1..10] of Integer;
+    temp : Integer;
+    procedure readarray;
+    var
+        i: Integer;
+        z: array[1..5] of Real;
+        u: Real; 
+    begin
+        u := 33.11;
+        for i := 1 to 10 do
+        begin
+            y[i] := i;
+        end;
+    end;
+begin
+    d := 0;
+    a := 1 + 5 - 7 * (-2);
+    b := 40;
+    pi := 0.14;
+    temp := 9 - 6 + (2 - 4 * 3 / (6 - 4));
+	num := 10 * 19;
+    c := 8 + (a + b) * temp + 2;
+    x := 'hello';
+    if c >= num then num := c else c := num;
+    while pi < a do
+    begin
+        pi := pi + 1.0;
+    end;
+    for i := 1 to 5 do
+    begin
+        a := a - 5;
+    end;
+    b := 8;
+    repeat
+        a := a + 2;
+    until a <> 10;
+    c := 1;
+end.

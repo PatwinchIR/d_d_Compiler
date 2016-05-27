@@ -23,6 +23,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		EC1785F51CF7D01600C154A2 /* hello.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = hello.txt; sourceTree = "<group>"; };
+		EC1785F61CF7D01600C154A2 /* intercode.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = intercode.txt; sourceTree = "<group>"; };
 		EC73ECCB1CF1F1E800E768FA /* notagain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = notagain.h; sourceTree = "<group>"; };
 		ECDC076B1C99513000DBD883 /* d_d_Compiler */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = d_d_Compiler; sourceTree = BUILT_PRODUCTS_DIR; };
 		ECDC076E1C99513000DBD883 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -58,6 +60,8 @@
 		ECDC076D1C99513000DBD883 /* d_d_Compiler */ = {
 			isa = PBXGroup;
 			children = (
+				EC1785F51CF7D01600C154A2 /* hello.txt */,
+				EC1785F61CF7D01600C154A2 /* intercode.txt */,
 				EC73ECCB1CF1F1E800E768FA /* notagain.h */,
 				ECDC076E1C99513000DBD883 /* main.c */,
 			);
