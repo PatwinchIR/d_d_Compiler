@@ -193,7 +193,7 @@ Token currentSubProc;
 int currentArraySize = 0;
 
 //for gencode;
-FILE *intercode;
+//FILE *intercode;
 int codelabel = 0;
 int currentTemp = 0;
 
@@ -238,7 +238,7 @@ void printQuad();
 int main(int argc, const char * argv[]) {
     initialiseKeywordTable();
     pasfile = fopen("/Users/d_d/Desktop/CompilerPrinciple/hello.txt", "r");
-    intercode = fopen("/Users/d_d/Desktop/CompilerPrinciple/intercode.txt", "w");
+//    intercode = fopen("/Users/d_d/Desktop/CompilerPrinciple/intercode.txt", "w");
     parse();
     printQuad();
     return 0;
@@ -392,166 +392,230 @@ void printQuad(){
     for (i = 0; i < BACKPATCHNUM; i++) {
         temp = quadList[i];
         if (temp.op.type != 0) {
-            printf("%4d: ", i);
+            printf( "%4d: ", i);
             switch (temp.op.type) {
                 case ARRAYADDR:
                     if (temp.result.varname == 0) {
-                        printf("%s := ", temp.result.tokenname);
+                        printf( "%s := ", temp.result.tokenname);
                     }else{
-                        printf("t%d := ", temp.result.varname);
+                        printf( "t%d := ", temp.result.varname);
                     }
                     if (temp.arg1.varname == 0) {
-                        printf("%d", temp.arg1.intval);
+                        printf( "%d", temp.arg1.intval);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
                     break;
                     
                 case STAR:
-                    printf("t%d := ", temp.result.varname);
+                    printf( "t%d := ", temp.result.varname);
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" * ");
+                    printf( " * ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
                     break;
                     
                 case SLASH:
-                    printf("t%d := ", temp.result.varname);
+                    printf( "t%d := ", temp.result.varname);
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" / ");
+                    printf( " / ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
                     break;
                     
                 case ARRAYOFFSET:
-                    printf("t%d := ", temp.result.varname);
+                    printf( "t%d := ", temp.result.varname);
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" * %d", temp.arg2.intval);
+                    printf( " * %d", temp.arg2.intval);
                     break;
                     
                 case ASSIGNMENT:
-                    printf("%s := ", temp.result.tokenname);
+                    printf( "%s := ", temp.result.tokenname);
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
                     break;
                     
                 case OFFSETASSIGN:
-                    printf("t%d[t%d] := ", temp.result.varname, temp.result.offset);
+                    printf( "t%d[t%d] := ", temp.result.varname, temp.result.offset);
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
                     break;
                     
                 case MINUSASSIGN:
-                    printf("t%d := minus %s", temp.result.varname, temp.arg1.tokenname);
+                    printf( "t%d := minus %s", temp.result.varname, temp.arg1.tokenname);
                     break;
                     
                 case PLUS:
                     if (temp.result.varname == 0) {
-                        printf("%s := ", temp.result.tokenname);
+                        printf( "%s := ", temp.result.tokenname);
                     }else{
-                        printf("t%d := ", temp.result.varname);
+                        printf( "t%d := ", temp.result.varname);
                     }
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" + ");
+                    printf( " + ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
                     break;
                     
                 case MINUS:
                     if (temp.result.varname == 0) {
-                        printf("%s := ", temp.result.tokenname);
+                        printf( "%s := ", temp.result.tokenname);
                     }else{
-                        printf("t%d := ", temp.result.varname);
+                        printf( "t%d := ", temp.result.varname);
                     }
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" - ");
+                    printf( " - ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
                     break;
                     
                 case LT:
-                    printf("if ");
+                    printf( "if ");
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" < ");
+                    printf( " < ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
-                    printf(" goto %d", temp.result.quad);
+                    printf( " goto %d", temp.result.quad);
                     break;
                     
                 case GT:
-                    printf("if ");
+                    printf( "if ");
                     if (temp.arg1.varname == 0) {
-                        printf("%s", temp.arg1.tokenname);
+                        printf( "%s", temp.arg1.tokenname);
                     }else{
-                        printf("t%d", temp.arg1.varname);
+                        printf( "t%d", temp.arg1.varname);
                     }
-                    printf(" > ");
+                    printf( " > ");
                     if (temp.arg2.varname == 0) {
-                        printf("%s", temp.arg2.tokenname);
+                        printf( "%s", temp.arg2.tokenname);
                     }else{
-                        printf("t%d", temp.arg2.varname);
+                        printf( "t%d", temp.arg2.varname);
                     }
-                    printf(" goto %d", temp.result.quad);
+                    printf( " goto %d", temp.result.quad);
+                    break;
+                    
+                case GE:
+                    printf( "if ");
+                    if (temp.arg1.varname == 0) {
+                        printf( "%s", temp.arg1.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg1.varname);
+                    }
+                    printf( " >= ");
+                    if (temp.arg2.varname == 0) {
+                        printf( "%s", temp.arg2.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg2.varname);
+                    }
+                    printf( " goto %d", temp.result.quad);
+                    break;
+                    
+                case LE:
+                    printf( "if ");
+                    if (temp.arg1.varname == 0) {
+                        printf( "%s", temp.arg1.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg1.varname);
+                    }
+                    printf( " <= ");
+                    if (temp.arg2.varname == 0) {
+                        printf( "%s", temp.arg2.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg2.varname);
+                    }
+                    printf( " goto %d", temp.result.quad);
+                    break;
+                    
+                case EQUAL:
+                    printf( "if ");
+                    if (temp.arg1.varname == 0) {
+                        printf( "%s", temp.arg1.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg1.varname);
+                    }
+                    printf( " = ");
+                    if (temp.arg2.varname == 0) {
+                        printf( "%s", temp.arg2.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg2.varname);
+                    }
+                    printf( " goto %d", temp.result.quad);
+                    break;
+                    
+                case NOTEQUAL:
+                    printf( "if ");
+                    if (temp.arg1.varname == 0) {
+                        printf( "%s", temp.arg1.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg1.varname);
+                    }
+                    printf( " <> ");
+                    if (temp.arg2.varname == 0) {
+                        printf( "%s", temp.arg2.tokenname);
+                    }else{
+                        printf( "t%d", temp.arg2.varname);
+                    }
+                    printf( " goto %d", temp.result.quad);
                     break;
                     
                 case GOTO:
-                    printf("goto %d", temp.result.quad);
+                    printf( "goto %d", temp.result.quad);
                     break;
                     
                 case OR:
-                    printf("t%d := t%d or t%d", temp.result.varname, temp.arg1.varname, temp.arg2.varname);
+                    printf( "t%d := t%d or t%d", temp.result.varname, temp.arg1.varname, temp.arg2.varname);
                     break;
                     
                 default:
-                    printf("%d", temp.op.type);
+                    printf( "%d", temp.op.type);
                     break;
             }
-            printf("\n");
+            printf( "\n");
         }
     }
 }
@@ -649,7 +713,7 @@ int parse() {
         }else if (n < 0) {
             printf("Reduce using %d: %s\n",-n-1, ProductionTable[-n-1]);
             switch (-n-1) {
-                case 2: //program_heading -> PROGRAM identifier
+                case 2: // program_heading -> PROGRAM identifier
                     tblptrp ++;
                     *tblptrp = mktable(NULL);
                     offsetp ++;
@@ -728,11 +792,28 @@ int parse() {
                     datatypeSize = TypeWidth[typeDenoter];
                     break;
                     
+                case 66: //relop -> EQUAL;
+                    nonTerminals[relop] = *vsp;
+                    reloperp ++;
+                    *reloperp = nonTerminals[relop];
+                    break;
+                    
+                case 67: //relop -> GE
+                    nonTerminals[relop] = *vsp;
+                    reloperp ++;
+                    *reloperp = nonTerminals[relop];
+                    break;
+                    
                 case 68: //relop -> GT
                     nonTerminals[relop] = *vsp;
                     reloperp ++;
                     *reloperp = nonTerminals[relop];
-
+                    break;
+                    
+                case 69: //relop -> LE
+                    nonTerminals[relop] = *vsp;
+                    reloperp ++;
+                    *reloperp = nonTerminals[relop];
                     break;
                     
                 case 70: //relop -> LT
@@ -745,6 +826,12 @@ int parse() {
                     nonTerminals[addop] = *vsp;
                     addoperp ++;
                     *addoperp = nonTerminals[addop];
+                    break;
+                    
+                case 72: //relop -> NOTEQUAL
+                    nonTerminals[relop] = *vsp;
+                    reloperp ++;
+                    *reloperp = nonTerminals[relop];
                     break;
                     
                 case 73: //m2 -> EPSILON;
@@ -776,12 +863,11 @@ int parse() {
                     
                 case 80: //statement_sequence -> statement
                     nonTerminals[statement_sequence].nextlist = nonTerminals[statement].nextlist;
-                    stmtseqp ++;
-                    *stmtseqp = nonTerminals[statement_sequence];
                     break;
                     
                 case 81: //statement -> closed_statement
                     nonTerminals[statement] = nonTerminals[closed_statement];
+                    clsstmtp --;
                     break;
                     
                 case 82: //closed_statement -> non_labeled_closed_statement
@@ -818,6 +904,14 @@ int parse() {
                     *varaccp = nonTerminals[variable_access];
                     break;
                     
+                case 85: //statement -> open_statement
+                    nonTerminals[statement] = nonTerminals[open_statement];
+                    break;
+                    
+                case 86: //open_statement -> non_labeled_open_statement
+                    nonTerminals[open_statement] = nonTerminals[non_labeled_open_statement];
+                    break;
+                    
                 case 87: //non_labeled_closed_statement -> assignment_statement
                     nonTerminals[non_labeled_closed_statement] = nonTerminals[assignment_statement];
                     break;
@@ -832,6 +926,10 @@ int parse() {
                     
                 case 91: //non_labeled_closed_statement -> closed_for_statement
                     nonTerminals[non_labeled_closed_statement] = nonTerminals[closed_for_statement];
+                    break;
+                    
+                case 92: //non_labeled_open_statement -> open_if_statement
+                    nonTerminals[non_labeled_open_statement] = nonTerminals[open_if_statement];
                     break;
                     
                 case 95: //variable_access -> indexed_variable
@@ -886,7 +984,6 @@ int parse() {
                     } while (temp);
                     
                     printf("%4d: t%d := %d\n",codelabel , varpos, temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->offset);
-//                    fprintf(intercode, "%4d: t%d := %d\n",codelabel, varpos, temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->offset);
                     quadList[codelabel].op.type = ARRAYADDR;
                     quadList[codelabel].arg1.val = INTTYPE;
                     quadList[codelabel].arg1.intval = temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->offset;
@@ -897,10 +994,8 @@ int parse() {
                     varoffset = newtemp();
                     if (nonTerminals[expression].varname == 0) {
                         printf("%4d: t%d := %s * %d\n",codelabel, varoffset, nonTerminals[expression].tokenname, TypeWidth[temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->datatype]);
-                        fprintf(intercode, "%4d: t%d := %s * %d\n",codelabel, varoffset, nonTerminals[expression].tokenname, TypeWidth[temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->datatype]);
                     }else{
                         printf("%4d: t%d := t%d * %d\n",codelabel, varoffset, nonTerminals[expression].varname, TypeWidth[temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->datatype]);
-                        fprintf(intercode, "%4d: t%d := t%d * %d\n",codelabel, varoffset, nonTerminals[expression].varname, TypeWidth[temp->SymbolTableBody[nonTerminals[indexed_variable].pos]->datatype]);
                     }
                     nonTerminals[indexed_variable].offset = varoffset;
                     
@@ -981,14 +1076,11 @@ int parse() {
                         if (nonTerminals[variable_access].offset == -1) {
                             varname = nonTerminals[expression].varname;
                             printf("%4d: %s := ",codelabel, temp->SymbolTableBody[nonTerminals[variable_access].pos]->name);
-                            fprintf(intercode, "%4d: %s := ",codelabel, temp->SymbolTableBody[nonTerminals[variable_access].pos]->name);
                             
                             if (varname == 0) {
                                 printf("%s\n", nonTerminals[expression].tokenname);
-                                fprintf(intercode, "%s\n", nonTerminals[expression].tokenname);
                             }else{
                                 printf("t%d\n", nonTerminals[expression].varname);
-                                fprintf(intercode, "t%d\n", nonTerminals[expression].varname);
                             }
                             quadList[codelabel].op.type = ASSIGNMENT;
                             quadList[codelabel].arg1 = nonTerminals[expression];
@@ -996,13 +1088,10 @@ int parse() {
                         }else{
                             varname = nonTerminals[expression].varname;
                             printf("%4d: t%d[t%d] := ",codelabel, nonTerminals[variable_access].varname, nonTerminals[variable_access].offset);
-                            fprintf(intercode, "%4d: t%d[t%d] := ",codelabel, nonTerminals[variable_access].varname, nonTerminals[variable_access].offset);
                             if (varname == 0) {
                                 printf("%s\n", nonTerminals[expression].tokenname);
-                                fprintf(intercode, "%s\n", nonTerminals[expression].tokenname);
                             }else{
                                 printf("t%d\n", nonTerminals[expression].varname);
-                                fprintf(intercode, "t%d\n", nonTerminals[expression].varname);
                             }
                             quadList[codelabel].op.type = OFFSETASSIGN;
                             quadList[codelabel].arg1 = nonTerminals[expression];
@@ -1051,7 +1140,6 @@ int parse() {
                         // gencode;
                         nonTerminals[factor].varname = newtemp();
                         printf("%4d: t%d := minus %s\n",codelabel, nonTerminals[factor].varname, nonTerminals[factor].tokenname);
-                        fprintf(intercode, "%4d: t%d := minus %s\n",codelabel, nonTerminals[factor].varname, nonTerminals[factor].tokenname);
                         quadList[codelabel].op.type = MINUSASSIGN;
                         quadList[codelabel].arg1 = nonTerminals[factor];
                         quadList[codelabel].result = nonTerminals[factor];
@@ -1064,7 +1152,7 @@ int parse() {
                     }
                     break;
                     
-                case 155:
+                case 155: //primary -> NOT primary
                     for (k = 0; k < BACKPATCHNUM; k++) {
                         blisttemp[k] = nonTerminals[primary].truelist[k];
                     }
@@ -1083,13 +1171,8 @@ int parse() {
                     break;
                     
                 case 159: //statement_sequence -> statement_sequence semicolon m3 statement
-                    nonTerminals[statement_sequence] = *stmtseqp;
-                    
                     backpatch(nonTerminals[statement_sequence].nextlist, nonTerminals[m3].quad);
-                    
                     nonTerminals[statement_sequence].nextlist = nonTerminals[statement].nextlist;
-                    
-                    stmtseqp --;
                     mlstp --;
                     break;
                     
@@ -1111,18 +1194,14 @@ int parse() {
                     
                     if (varname == 0) {
                         printf("%4d: t%d := %s %s",codelabel, nonTerminals[simple_expression].varname, nonTerminals[simple_expression].tokenname, nonTerminals[addop].tokenname);
-                        fprintf(intercode, "%4d: t%d := %s %s",codelabel, nonTerminals[simple_expression].varname, nonTerminals[simple_expression].tokenname, nonTerminals[addop].tokenname);
                     }else{
                         printf("%4d: t%d := t%d %s",codelabel, nonTerminals[simple_expression].varname, varname, nonTerminals[addop].tokenname);
-                        fprintf(intercode, "%4d: t%d := t%d %s",codelabel, nonTerminals[simple_expression].varname, varname, nonTerminals[addop].tokenname);
                     }
                     varname = nonTerminals[term].varname;
                     if (varname == 0) {
                         printf(" %s\n", nonTerminals[term].tokenname);
-                        fprintf(intercode, " %s\n", nonTerminals[term].tokenname);
                     }else{
                         printf(" t%d\n", nonTerminals[term].varname);
-                        fprintf(intercode, " t%d\n", nonTerminals[term].varname);
                     }
                     quadList[codelabel].op = nonTerminals[addop];
                     quadList[codelabel].arg2 = nonTerminals[term];
@@ -1157,9 +1236,9 @@ int parse() {
                                     break;
                             }
                         }else if (nonTerminals[addop].type == OR){
-//                            backpatch(nonTerminals[simple_expression].falselist, nonTerminals[m2].quad);
-//                            nonTerminals[simple_expression].truelist = mergelist(nonTerminals[simple_expression].truelist, nonTerminals[term].truelist);
-//                            nonTerminals[simple_expression].falselist = nonTerminals[term].falselist;
+                            backpatch(nonTerminals[simple_expression].falselist, nonTerminals[m2].quad);
+                            nonTerminals[simple_expression].truelist = mergelist(nonTerminals[simple_expression].truelist, nonTerminals[term].truelist);
+                            nonTerminals[simple_expression].falselist = nonTerminals[term].falselist;
                         }
                     }else{
                         printf("\nERROR[TYPE].\n");
@@ -1240,18 +1319,14 @@ int parse() {
                     
                     if (varname == 0) {
                         printf("%4d: t%d := %s %s",codelabel, nonTerminals[term].varname, nonTerminals[term].tokenname, nonTerminals[mulop].tokenname);
-                        fprintf(intercode, "%4d: t%d := %s %s",codelabel, nonTerminals[term].varname, nonTerminals[term].tokenname, nonTerminals[mulop].tokenname);
                     }else{
                         printf("%4d: t%d := t%d %s",codelabel, nonTerminals[term].varname, varname, nonTerminals[mulop].tokenname);
-                        fprintf(intercode, "%4d: t%d := t%d %s",codelabel, nonTerminals[term].varname, varname, nonTerminals[mulop].tokenname);
                     }
                     varname = nonTerminals[factor].varname;
                     if (varname == 0) {
                         printf(" %s\n", nonTerminals[factor].tokenname);
-                        fprintf(intercode, " %s\n", nonTerminals[factor].tokenname);
                     }else{
                         printf(" t%d\n", nonTerminals[factor].varname);
-                        fprintf(intercode, " t%d\n", nonTerminals[factor].varname);
                     }
                     quadList[codelabel].op = nonTerminals[mulop];
                     quadList[codelabel].arg2 = nonTerminals[factor];
@@ -1301,6 +1376,13 @@ int parse() {
                     
                 case 166: //n3 -> EPSILON
                     backpatch(nonTerminals[statement_sequence].nextlist, codelabel);
+                    break;
+                    
+                case 173: //open_if_statement -> IF boolean_expression THEN m3 statement
+                    backpatch(nonTerminals[boolean_expression].truelist, nonTerminals[m3].quad);
+                    nonTerminals[open_if_statement].nextlist = mergelist(nonTerminals[boolean_expression].falselist, nonTerminals[statement].nextlist);
+                    
+                    mlstp --;
                     break;
                     
                 case 174: //n2 -> EPSILON
@@ -1419,6 +1501,7 @@ int parse() {
                     
                     nonTerminals[closed_for_statement].nextlist = nonTerminals[m4].nextlist;
                     
+                    clsstmtp --;
                     mlstp --;
                     break;
                     
